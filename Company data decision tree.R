@@ -1,0 +1,35 @@
+install.packages("C50")
+library(C50)
+install.packages("tree")
+library(tree)
+Company_Data <- read.csv("C:/Users/Yogesh/Downloads/Company_Data.csv")
+View(Company_Data)
+summary(Company_Data)
+Company_Data_Bad<-Company_Data[Company_Data$ShelveLoc=="Bad",]
+Company_Data_Good <- Company_Data[Company_Data$ShelveLoc=="Good",]
+Company_Data_Medium<-Company_Data[Company_Data$ShelveLoc=="Medium",]
+Company_Data_train <- rbind(Company_Data_Bad[1:25,],Company_Data_Good[1:25,],Company_Data_Medium[1:25,])
+Company_Data_test <- rbind(Company_Data_Bad[26:50,],Company_Data_Good[26:50,],Company_Data_Medium[26:50,])
+Company_Datac5.0_train <- C5.0(Company_Data_train[,-5],Company_Data_train$ShelveLoc)
+windows()
+plot(Company_Datac5.0_train)
+pred_train <- predict(Company_Datac5.0_train,Company_Data_train)
+mean(Company_Data_train$ShelveLoc==pred_train) 
+library(caret)
+confusionMatrix(pred_train,Company_Data_train$ShelveLoc)
+predc5.0_test <- predict(Company_Datac5.0_train,newdata=Company_Data_test) 
+mean(predc5.0_test==Company_Data_test$ShelveLoc) 
+confusionMatrix(predc5.0_test,Company_Data_test$ShelveLoc)
+library(gmodels)
+CrossTable(Company_Data_test$ShelveLoc,predc5.0_test)
+library(tree)
+Company_Data_tree <- tree(ShelveLoc~.,data=Company_Data_train)
+plot(Company_Data_tree)
+text(Company_Data_tree,pretty = 0)
+pred_tree <- as.data.frame(predict(Company_Data_tree,newdata=Company_Data_test))
+pred_tree["final"] <- NULL
+pred_test_df <- predict(Company_Data_tree,newdata=Company_Data_test)
+pred_tree$final <- colnames(pred_test_df)[apply(pred_test_df,1,which.max)]
+mean(pred_tree$final==Company_Data_test$ShelveLoc) 
+CrossTable(Company_Data_test$ShelveLoc,pred_tree$final)
+
